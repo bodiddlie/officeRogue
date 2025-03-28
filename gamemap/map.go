@@ -80,36 +80,36 @@ func (m *GameMap) IsWall(x, y int) bool {
 	// Convert pixel coordinates to tile coordinates
 	tileX := x / m.TileWidth
 	tileY := y / m.TileHeight
-	
+
 	// Check boundaries
 	if tileX < 0 || tileY < 0 {
 		return true // Out of bounds is considered a wall
 	}
-	
+
 	// Check each layer (we're assuming the first layer contains walls)
 	if len(m.Layers) > 0 {
 		layer := m.Layers[0]
 		if tileX >= layer.Width || tileY >= layer.Height {
 			return true // Out of bounds is considered a wall
 		}
-		
+
 		tileIndex := tileY*layer.Width + tileX
 		if tileIndex >= 0 && tileIndex < len(layer.Data) {
 			// Tile index 0 is a wall
 			return layer.Data[tileIndex] == 0
 		}
 	}
-	
+
 	return false
 }
 
 // CanMoveToPosition checks if the entity can move to the given position
 func (m *GameMap) CanMoveToPosition(x, y, width, height int) bool {
 	// Check all four corners of the sprite
-	return !m.IsWall(x, y) &&                     // Top-left
-	       !m.IsWall(x+width-1, y) &&             // Top-right
-	       !m.IsWall(x, y+height-1) &&            // Bottom-left
-	       !m.IsWall(x+width-1, y+height-1)       // Bottom-right
+	return !m.IsWall(x, y) && // Top-left
+		!m.IsWall(x+width-1, y) && // Top-right
+		!m.IsWall(x, y+height-1) && // Bottom-left
+		!m.IsWall(x+width-1, y+height-1) // Bottom-right
 }
 
 // Tile represents a single tile in the game.
