@@ -28,6 +28,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
 
+	g.GameMap.Draw(screen)
+
 	for _, entity := range g.Entities {
 		entity.Draw(screen)
 	}
@@ -41,12 +43,6 @@ func main() {
 	screenWidth, screenHeight := 640, 480
 
 	gameMap, err := gamemap.LoadMap("sample_map.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Use the new CreateTiles method instead of CreateDrawables
-	drawables, err := gameMap.CreateTiles()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +61,7 @@ func main() {
 		Width:       32,
 		Height:      32,
 	}
-	drawables = append(drawables, sprite)
+	drawables := []game.Drawable{sprite}
 
 	// Create game instance with entities, player reference, and game map
 	game := &Game{

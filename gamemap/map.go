@@ -6,8 +6,6 @@ import (
 	"io"
 	"os"
 
-	"officeRogue/game"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -24,6 +22,7 @@ type GameMap struct {
 		Height int    `json:"height"`
 		Data   []int  `json:"data"`
 	} `json:"layers"`
+	TileImg *ebiten.Image
 }
 
 // LoadMap loads the map from a JSON file.
@@ -44,35 +43,33 @@ func LoadMap(filePath string) (*GameMap, error) {
 		return nil, err
 	}
 
-	return &gameMap, nil
-}
-
-// CreateTiles creates a list of tiles from the map data.
-func (m *GameMap) CreateTiles() ([]game.Drawable, error) {
-	tileImg, _, err := ebitenutil.NewImageFromFile("assets/tiles/" + m.Tileset)
+	tileImg, _, err := ebitenutil.NewImageFromFile("assets/tiles/" + gameMap.Tileset)
 	if err != nil {
 		return nil, err
 	}
 
-	var tiles []game.Drawable
+	gameMap.TileImg = tileImg
+
+	return &gameMap, nil
+}
+
+func (m *GameMap) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(0, 0)
+	screen.DrawImage(m.TileImg, op)
 
 	for _, layer := range m.Layers {
 		for y := 0; y < layer.Height; y++ {
 			for x := 0; x < layer.Width; x++ {
 				idx := layer.Data[y*layer.Width+x]
-				// Import tile from the entities package when needed
-				tile := &Tile{
-					Index:   idx,
-					X:       x * m.TileWidth,
-					Y:       y * m.TileHeight,
-					TileMap: tileImg,
-				}
-				tiles = append(tiles, tile)
+				sx, sy := (idx%8)*32, (idx/8)*32
+				subImage := m.TileImg.SubImage(image.Rect(sx, sy, sx+32, sy+32)).(*ebiten.Image)
+				op.GeoM.Reset()
+				op.GeoM.Translate(float64(x*m.TileWidth), float64(y*m.TileHeight))
+				screen.DrawImage(subImage, op)
 			}
 		}
 	}
-
-	return tiles, nil
 }
 
 // IsWall checks if the tile at the given position is a wall (tile index 0)
@@ -110,20 +107,4 @@ func (m *GameMap) CanMoveToPosition(x, y, width, height int) bool {
 		!m.IsWall(x+width-1, y) && // Top-right
 		!m.IsWall(x, y+height-1) && // Bottom-left
 		!m.IsWall(x+width-1, y+height-1) // Bottom-right
-}
-
-// Tile represents a single tile in the game.
-type Tile struct {
-	Index   int
-	X, Y    int
-	TileMap *ebiten.Image
-}
-
-// Draw draws the tile on the screen.
-func (t *Tile) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(t.X), float64(t.Y))
-	sx, sy := (t.Index%8)*32, (t.Index/8)*32
-	subImage := t.TileMap.SubImage(image.Rect(sx, sy, sx+32, sy+32)).(*ebiten.Image)
-	screen.DrawImage(subImage, op)
 }
